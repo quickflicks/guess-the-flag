@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Guess the Flag Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        .game-container {
+            background-color: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .game-container:hover {
+            transform: translateY(-2px);
+        }
+        .flag-display {
+            margin: 20px 0;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .flag-display img {
+            max-width: 95%;
+            max-height: 100px;
+            object-fit: contain;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .flag-display img:hover {
+            transform: scale(1.05);
+        }
+        .option-button {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            margin: 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            width: calc(50% - 16px);
+            position: relative;
+            overflow: hidden;
+        }
+        .option-button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+        .option-button:hover:before {
+            left: 100%;
+        }
+        .option-button:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        .option-button:active {
+            transform: translateY(1px);
+        }
+        .option-button.correct {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            animation: correctPulse 1s;
+        }
+        .option-button.incorrect {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            animation: incorrectShake 0.5s;
+        }
+        .option-button:disabled {
+            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+            cursor: not-allowed;
+            transform: none;
+        }
+        .settings-panel, .stats-panel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .settings-panel label, .stats-panel div {
+            font-weight: 500;
+            color: #4b5563;
+        }
+        .settings-panel select, .settings-panel button, #next-flag-button, #restart-game-button {
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .settings-panel select:hover, .settings-panel button:hover {
+            border-color: #3b82f6;
+            transform: translateY(-1px);
+        }
+        #start-game-button, #next-flag-button, #restart-game-button {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            padding: 12px 24px;
+        }
+        #start-game-button:hover, #next-flag-button:hover, #restart-game-button:hover {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+        }
+        #message-area {
+            margin-top: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            min-height: 28px;
+            transition: all 0.3s ease;
+        }
+        .timer-bar-container {
+            width: 100%;
+            height: 10px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            margin-top: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .timer-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+            border-radius: 10px;
+            transition: width 0.1s linear;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal.visible {
+            opacity: 1;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            max-width: 90%;
+            width: 400px;
+        }
+        .modal.visible .modal-content {
+            transform: scale(1);
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
+            transition: width 0.3s ease;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes correctPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes incorrectShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        .keyboard-shortcut {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            background: rgba(0,0,0,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+        }
+        .hint-button {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+        .hint-button:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            transform: translateY(-1px);
+        }
+        .hint-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .achievement {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        .achievement.show {
+            transform: translateX(0);
+        }
+        .achievement i {
+            font-size: 24px;
+            color: #f59e0b;
+        }
+        @media (max-width: 480px) {
+            .option-button {
+                width: 100%;
+            }
+            .settings-panel {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .settings-panel > * {
+                width: 100%;
+            }
+            .flag-display {
+                height: 100px;
+            }
+            .flag-display img {
+                max-height: 80px;
+            }
+            .modal-content {
+                padding: 20px;
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-indigo-600 to-blue-600 text-transparent bg-clip-text">
+            Guess the Flag! <i class="fas fa-flag"></i>
+        </h1>
+
+        <div id="settings-panel" class="settings-panel">
+            <div class="w-full md:w-auto">
+                <label for="difficulty-select" class="mr-2">
+                    <i class="fas fa-star mr-1"></i> Difficulty:
+                </label>
+                <select id="difficulty-select" class="w-full md:w-auto">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+            <div class="w-full md:w-auto">
+                <label for="region-select" class="mr-2">
+                    <i class="fas fa-globe mr-1"></i> Region:
+                </label>
+                <select id="region-select" class="w-full md:w-auto">
+                    <option value="all">All Regions</option>
+                    <option value="Americas">Americas</option>
+                    <option value="Europe">Europe</option>
+                    <option value="Asia">Asia</option>
+                    <option value="Africa">Africa</option>
+                    <option value="Oceania">Oceania</option>
+                </select>
+            </div>
+            <button id="start-game-button" class="w-full md:w-auto">
+                <i class="fas fa-play mr-1"></i> Start Game
+            </button>
+
+            <div id="previous-stats-display" class="previous-stats-display w-full mt-4">
+                <h3 class="text-lg font-semibold mb-2">
+                    <i class="fas fa-trophy mr-1 text-yellow-500"></i> Your Stats:
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <p><i class="fas fa-medal mr-1 text-yellow-600"></i> All-Time High Score: <span id="settings-all-time-high-score" class="font-bold">0</span></p>
+                    <p><i class="fas fa-fire mr-1 text-orange-500"></i> All-Time Longest Streak: <span id="settings-all-time-longest-streak" class="font-bold">0</span></p>
+                    <p><i class="fas fa-history mr-1 text-blue-500"></i> Last Game Score: <span id="settings-last-score" class="font-bold">N/A</span></p>
+                    <p><i class="fas fa-bolt mr-1 text-purple-500"></i> Last Game Streak: <span id="settings-last-streak" class="font-bold">N/A</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="game-area" class="hidden">
+            <div class="stats-panel">
+                <div><i class="fas fa-star text-yellow-500 mr-1"></i> Score: <span id="score" class="font-bold">0</span></div>
+                <div><i class="fas fa-fire text-orange-500 mr-1"></i> Streak: <span id="streak" class="font-bold">0</span></div>
+                <div><i class="fas fa-clock text-blue-500 mr-1"></i> Timer: <span id="timer-display" class="font-bold">--</span>s</div>
+                <div><i class="fas fa-check text-green-500 mr-1"></i> Answered: <span id="questions-answered-stat" class="font-bold">0</span></div>
+            </div>
+
+            <div class="progress-bar mt-2">
+                <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
+            </div>
+
+            <div class="timer-bar-container hidden" id="timer-bar-container">
+                <div class="timer-bar" id="timer-bar"></div>
+            </div>
+
+            <div id="flag-display" class="flag-display">
+                <div class="loading-spinner hidden" id="flag-loading-spinner"></div>
+                <span style="font-size: 60px;">🏁</span>
+            </div>
+
+            <div id="options-container" class="flex flex-wrap justify-center mt-4">
+            </div>
+
+            <button id="hint-button" class="hint-button mt-4 hidden">
+                <i class="fas fa-lightbulb mr-1"></i> Get Hint (-5 points)
+            </button>
+
+            <div id="message-area" class="mt-4 text-lg font-semibold"></div>
+            <button id="next-flag-button" class="mt-6 hidden">
+                <i class="fas fa-forward mr-1"></i> Next Flag
+            </button>
+        </div>
+
+        <div id="game-over-modal" class="modal">
+            <div class="modal-content">
+                <h2 class="text-2xl font-bold mb-4" id="game-over-title">Game Over!</h2>
+                <p class="mb-2" id="game-over-reason">You made an incorrect guess or time ran out.</p>
+                <hr class="my-3">
+                <p class="mb-1">This Game's Stats:</p>
+                <p class="mb-1"><i class="fas fa-star text-yellow-500 mr-1"></i> Final Score: <span id="final-score" class="font-bold">0</span></p>
+                <p class="mb-1"><i class="fas fa-check text-green-500 mr-1"></i> Total Questions: <span id="total-questions-answered" class="font-bold">0</span></p>
+                <p class="mb-1"><i class="fas fa-bullseye text-blue-500 mr-1"></i> Correct Answers: <span id="correct-answers-count" class="font-bold">0</span></p>
+                <p class="mb-3"><i class="fas fa-fire text-orange-500 mr-1"></i> Longest Streak: <span id="longest-streak-stat" class="font-bold">0</span></p>
+                
+                <div class="all-time-stats">
+                    <h3 class="text-lg font-semibold"><i class="fas fa-trophy text-yellow-500 mr-1"></i> Your All-Time Bests:</h3>
+                    <p class="mb-1">Highest Score: <span id="all-time-high-score" class="font-bold">0</span></p>
+                    <p class="mb-3">Longest Streak: <span id="all-time-longest-streak" class="font-bold">0</span></p>
+                </div>
+                <button id="restart-game-button" class="mt-4">
+                    <i class="fas fa-redo mr-1"></i> Play Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="achievement" class="achievement">
+        <i class="fas fa-award"></i>
+        <div>
+            <h4 class="font-bold"></h4>
+            <p class="text-sm text-gray-600"></p>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const flagDisplay = document.getElementById('flag-display');
+        const optionsContainer = document.getElementById('options-container');
+        const messageArea = document.getElementById('message-area');
+        const scoreDisplay = document.getElementById('score');
+        const streakDisplay = document.getElementById('streak');
+        const timerDisplay = document.getElementById('timer-display');
+        const questionsAnsweredStatDisplay = document.getElementById('questions-answered-stat');
+        const timerBarContainer = document.getElementById('timer-bar-container');
+        const timerBar = document.getElementById('timer-bar');
+        const nextFlagButton = document.getElementById('next-flag-button');
+        const startGameButton = document.getElementById('start-game-button');
+        const difficultySelect = document.getElementById('difficulty-select');
+        const regionSelect = document.getElementById('region-select');
+        const settingsPanel = document.getElementById('settings-panel');
+        const gameArea = document.getElementById('game-area');
+        const gameOverModal = document.getElementById('game-over-modal');
+        const gameOverTitle = document.getElementById('game-over-title');
+        const gameOverReason = document.getElementById('game-over-reason');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const totalQuestionsDisplay = document.getElementById('total-questions-answered');
+        const correctAnswersDisplay = document.getElementById('correct-answers-count');
+        const longestStreakDisplay = document.getElementById('longest-streak-stat');
+        const restartGameButton = document.getElementById('restart-game-button');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        const hintButton = document.getElementById('hint-button');
+        const flagLoadingSpinner = document.getElementById('flag-loading-spinner');
+        const achievement = document.getElementById('achievement');
+        
+        // DOM elements for stats in settings panel
+        const settingsAllTimeHighScoreDisplay = document.getElementById('settings-all-time-high-score');
+        const settingsAllTimeLongestStreakDisplay = document.getElementById('settings-all-time-longest-streak');
+        const settingsLastScoreDisplay = document.getElementById('settings-last-score');
+        const settingsLastStreakDisplay = document.getElementById('settings-last-streak');
+
+        // DOM elements for all-time stats in game over modal
+        const allTimeHighScoreModalDisplay = document.getElementById('all-time-high-score');
+        const allTimeLongestStreakModalDisplay = document.getElementById('all-time-longest-streak');
+
+        // Sound effects
+        const correctSound = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAbAAkJCQkJCQkJCQkJCQkJCQwMDAwMDAwMDAwMDAwMDA4ODg4ODg4ODg4ODg4ODg4P////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAbD5UqzAAAAAAAAAAAAAAAAA/+MYxAAAAANIAAAAAExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxDsAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+        const incorrectSound = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAAZAAQEBAQEBAQEBAQEBAQEBgYGBgYGBgYGBgYGBgYGCAgICAgICAgICAgICAgIDg4ODg4ODg4ODg4ODg4OD////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAkOBM2swAAAAAAAAAAAAAAAAA/+MYxAAAAANIAAAAAExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxDsAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+
+        // Achievements
+        const achievements = {
+            FIRST_WIN: { title: 'First Victory!', description: 'Got your first correct answer!' },
+            STREAK_5: { title: 'Hot Streak!', description: 'Achieved a 5-flag streak!' },
+            STREAK_10: { title: 'Unstoppable!', description: 'Achieved a 10-flag streak!' },
+            SPEED_DEMON: { title: 'Speed Demon!', description: 'Answered correctly in under 3 seconds!' },
+            PERFECT_10: { title: 'Perfect 10!', description: 'Got 10 correct answers!' }
+        };
+
+        // --- Game State ---
+        let currentScore = 0;
+        let currentStreak = 0;
+        let longestStreak = 0;
+        let currentCorrectCountry = null;
+        let availableCountries = [];
+        let questionsAnsweredInSession = 0;
+        let correctAnswersInSession = 0;
+        let totalAvailableFlags = 0;
+        let hintUsed = false;
+        let averageResponseTime = 0;
+        let totalResponseTime = 0;
+        let startTime = 0;
+        
+        let timerInterval = null;
+        let timeLeft = 0;
+        const EASY_TIMER = 0;
+        const MEDIUM_TIMER = 20;
+        const HARD_TIMER = 15;
+        const END_GAME_DELAY = 2000;
+
+        // --- All-Time & Last Game Stats (loaded from Local Storage) ---
+        let allTimeHighScore = 0;
+        let allTimeLongestStreak = 0;
+        let lastGameScore = 0;
+        let lastGameStreak = 0;
+
+        const LOCAL_STORAGE_HIGH_SCORE_KEY = 'flagGameHighScore';
+        const LOCAL_STORAGE_LONGEST_STREAK_KEY = 'flagGameLongestStreak';
+        const LOCAL_STORAGE_LAST_SCORE_KEY = 'flagGameLastScore';
+        const LOCAL_STORAGE_LAST_STREAK_KEY = 'flagGameLastStreak';
+
+        // --- Country Data ---
+        const allCountries = [
+            // Americas
+            { name: "United States", emoji: "🇺🇸", region: "Americas", difficulty: 1, code: "us" },
+            { name: "Canada", emoji: "🇨🇦", region: "Americas", difficulty: 1, code: "ca" },
+            { name: "Brazil", emoji: "🇧🇷", region: "Americas", difficulty: 1, code: "br" },
+            { name: "Mexico", emoji: "🇲🇽", region: "Americas", difficulty: 1, code: "mx" },
+            { name: "Argentina", emoji: "🇦🇷", region: "Americas", difficulty: 2, code: "ar" },
+            { name: "Chile", emoji: "🇨🇱", region: "Americas", difficulty: 2, code: "cl" },
+            { name: "Colombia", emoji: "🇨🇴", region: "Americas", difficulty: 2, code: "co" },
+            { name: "Peru", emoji: "🇵🇪", region: "Americas", difficulty: 2, code: "pe" },
+            { name: "Venezuela", emoji: "🇻🇪", region: "Americas", difficulty: 2, code: "ve" },
+            { name: "Uruguay", emoji: "🇺🇾", region: "Americas", difficulty: 3, code: "uy" },
+
+            // Europe
+            { name: "United Kingdom", emoji: "🇬🇧", region: "Europe", difficulty: 1, code: "gb" },
+            { name: "France", emoji: "🇫🇷", region: "Europe", difficulty: 1, code: "fr" },
+            { name: "Germany", emoji: "🇩🇪", region: "Europe", difficulty: 1, code: "de" },
+            { name: "Italy", emoji: "🇮🇹", region: "Europe", difficulty: 1, code: "it" },
+            { name: "Spain", emoji: "🇪🇸", region: "Europe", difficulty: 1, code: "es" },
+            { name: "Portugal", emoji: "🇵🇹", region: "Europe", difficulty: 2, code: "pt" },
+            { name: "Netherlands", emoji: "🇳🇱", region: "Europe", difficulty: 2, code: "nl" },
+            { name: "Belgium", emoji: "🇧🇪", region: "Europe", difficulty: 2, code: "be" },
+            { name: "Switzerland", emoji: "🇨🇭", region: "Europe", difficulty: 2, code: "ch" },
+            { name: "Greece", emoji: "🇬🇷", region: "Europe", difficulty: 3, code: "gr" },
+
+            // Asia
+            { name: "Japan", emoji: "🇯🇵", region: "Asia", difficulty: 1, code: "jp" },
+            { name: "China", emoji: "🇨🇳", region: "Asia", difficulty: 1, code: "cn" },
+            { name: "South Korea", emoji: "🇰🇷", region: "Asia", difficulty: 1, code: "kr" },
+            { name: "India", emoji: "🇮🇳", region: "Asia", difficulty: 1, code: "in" },
+            { name: "Thailand", emoji: "🇹🇭", region: "Asia", difficulty: 2, code: "th" },
+            { name: "Vietnam", emoji: "🇻🇳", region: "Asia", difficulty: 2, code: "vn" },
+            { name: "Indonesia", emoji: "🇮🇩", region: "Asia", difficulty: 2, code: "id" },
+            { name: "Malaysia", emoji: "🇲🇾", region: "Asia", difficulty: 2, code: "my" },
+            { name: "Singapore", emoji: "🇸🇬", region: "Asia", difficulty: 3, code: "sg" },
+            { name: "Philippines", emoji: "🇵🇭", region: "Asia", difficulty: 3, code: "ph" },
+
+            // Africa
+            { name: "Egypt", emoji: "🇪🇬", region: "Africa", difficulty: 1, code: "eg" },
+            { name: "South Africa", emoji: "🇿🇦", region: "Africa", difficulty: 1, code: "za" },
+            { name: "Morocco", emoji: "🇲🇦", region: "Africa", difficulty: 2, code: "ma" },
+            { name: "Kenya", emoji: "🇰🇪", region: "Africa", difficulty: 2, code: "ke" },
+            { name: "Nigeria", emoji: "🇳🇬", region: "Africa", difficulty: 2, code: "ng" },
+            { name: "Ghana", emoji: "🇬🇭", region: "Africa", difficulty: 3, code: "gh" },
+            { name: "Tanzania", emoji: "🇹🇿", region: "Africa", difficulty: 3, code: "tz" },
+            { name: "Ethiopia", emoji: "🇪🇹", region: "Africa", difficulty: 3, code: "et" },
+            { name: "Uganda", emoji: "🇺🇬", region: "Africa", difficulty: 3, code: "ug" },
+            { name: "Senegal", emoji: "🇸🇳", region: "Africa", difficulty: 3, code: "sn" },
+
+            // Oceania
+            { name: "Australia", emoji: "🇦🇺", region: "Oceania", difficulty: 1, code: "au" },
+            { name: "New Zealand", emoji: "🇳🇿", region: "Oceania", difficulty: 1, code: "nz" },
+            { name: "Fiji", emoji: "🇫🇯", region: "Oceania", difficulty: 2, code: "fj" },
+            { name: "Papua New Guinea", emoji: "🇵🇬", region: "Oceania", difficulty: 3, code: "pg" },
+            { name: "Solomon Islands", emoji: "🇸🇧", region: "Oceania", difficulty: 3, code: "sb" }
+        ];
+
+        // --- Game Logic Functions ---
+
+        function showAchievement(achievement) {
+            const achievementEl = document.getElementById('achievement');
+            achievementEl.querySelector('h4').textContent = achievement.title;
+            achievementEl.querySelector('p').textContent = achievement.description;
+            achievementEl.classList.add('show');
+            setTimeout(() => {
+                achievementEl.classList.remove('show');
+            }, 3000);
+        }
+
+        function checkAchievements(correct, responseTime) {
+            if (correct) {
+                if (correctAnswersInSession === 1) {
+                    showAchievement(achievements.FIRST_WIN);
+                }
+                if (currentStreak === 5) {
+                    showAchievement(achievements.STREAK_5);
+                }
+                if (currentStreak === 10) {
+                    showAchievement(achievements.STREAK_10);
+                }
+                if (responseTime < 3) {
+                    showAchievement(achievements.SPEED_DEMON);
+                }
+                if (correctAnswersInSession === 10) {
+                    showAchievement(achievements.PERFECT_10);
+                }
+            }
+        }
+
+        function loadPersistentStats() {
+            const storedHighScore = localStorage.getItem(LOCAL_STORAGE_HIGH_SCORE_KEY);
+            const storedLongestStreak = localStorage.getItem(LOCAL_STORAGE_LONGEST_STREAK_KEY);
+            const storedLastScore = localStorage.getItem(LOCAL_STORAGE_LAST_SCORE_KEY);
+            const storedLastStreak = localStorage.getItem(LOCAL_STORAGE_LAST_STREAK_KEY);
+
+            allTimeHighScore = storedHighScore ? parseInt(storedHighScore, 10) : 0;
+            allTimeLongestStreak = storedLongestStreak ? parseInt(storedLongestStreak, 10) : 0;
+            lastGameScore = storedLastScore ? parseInt(storedLastScore, 10) : 0;
+            lastGameStreak = storedLastStreak ? parseInt(storedLastStreak, 10) : 0;
+        }
+
+        function saveCurrentGameAsLastGameStats() {
+            localStorage.setItem(LOCAL_STORAGE_LAST_SCORE_KEY, currentScore.toString());
+            localStorage.setItem(LOCAL_STORAGE_LAST_STREAK_KEY, longestStreak.toString());
+        }
+        
+        function updateAllTimeStats() {
+            if (currentScore > allTimeHighScore) {
+                allTimeHighScore = currentScore;
+                localStorage.setItem(LOCAL_STORAGE_HIGH_SCORE_KEY, allTimeHighScore.toString());
+            }
+            if (longestStreak > allTimeLongestStreak) {
+                allTimeLongestStreak = longestStreak;
+                localStorage.setItem(LOCAL_STORAGE_LONGEST_STREAK_KEY, allTimeLongestStreak.toString());
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function getFilteredCountries() {
+            const difficulty = difficultySelect.value;
+            const region = regionSelect.value;
+            let maxDifficulty;
+
+            switch (difficulty) {
+                case 'easy': maxDifficulty = 1; break;
+                case 'medium': maxDifficulty = 2; break;
+                case 'hard': maxDifficulty = 3; break;
+                default: maxDifficulty = 2;
+            }
+
+            return allCountries.filter(country => {
+                const difficultyMatch = country.difficulty <= maxDifficulty;
+                const regionMatch = (region === 'all') || (country.region === region);
+                return difficultyMatch && regionMatch;
+            });
+        }
+
+        function getNumberOfChoices() {
+            const difficulty = difficultySelect.value;
+            switch (difficulty) {
+                case 'easy': return 3;
+                case 'medium': return 4;
+                case 'hard': return 5;
+                default: return 4;
+            }
+        }
+
+        function getTimerDuration() {
+            const difficulty = difficultySelect.value;
+            switch (difficulty) {
+                case 'easy': return EASY_TIMER;
+                case 'medium': return MEDIUM_TIMER;
+                case 'hard': return HARD_TIMER;
+                default: return MEDIUM_TIMER;
+            }
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = getTimerDuration();
+            const initialDurationForPercentage = timeLeft;
+
+            if (timeLeft === 0) {
+                timerDisplay.textContent = "--";
+                timerBarContainer.classList.add('hidden');
+                return;
+            }
+
+            timerBarContainer.classList.remove('hidden');
+            timerDisplay.textContent = timeLeft;
+            timerBar.style.width = '100%';
+            timerBar.style.backgroundColor = '#3b82f6';
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                const percentageLeft = initialDurationForPercentage > 0 ? Math.max(0, (timeLeft / initialDurationForPercentage) * 100) : 0;
+                timerBar.style.width = `${percentageLeft}%`;
+
+                if (timeLeft <= 5 && timeLeft > 3) {
+                    timerBar.style.backgroundColor = '#f59e0b';
+                } else if (timeLeft <= 3 && timeLeft > 0) {
+                    timerBar.style.backgroundColor = '#ef4444';
+                }
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timerBar.style.backgroundColor = '#ef4444';
+                    handleAnswer(null, true);
+                }
+            }, 1000);
+        }
+
+        function loadNewFlag() {
+            messageArea.textContent = '';
+            nextFlagButton.classList.add('hidden');
+            optionsContainer.innerHTML = '';
+            hintButton.classList.add('hidden');
+            hintUsed = false;
+
+            if (availableCountries.length === 0) {
+                if (questionsAnsweredInSession > 0) {
+                    gameOverTitle.textContent = "Congratulations!";
+                    gameOverReason.textContent = "You've guessed all available flags for the current settings!";
+                    endGame();
+                } else {
+                    flagDisplay.innerHTML = '<span style="font-size: 24px;">⚠️</span>';
+                    messageArea.textContent = "Not enough countries for selected difficulty/region. Please adjust settings.";
+                    messageArea.style.color = '#f59e0b';
+                    settingsPanel.classList.remove('hidden');
+                    gameArea.classList.add('hidden');
+                }
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * availableCountries.length);
+            currentCorrectCountry = availableCountries.splice(randomIndex, 1)[0];
+
+            flagDisplay.innerHTML = '';
+            flagLoadingSpinner.classList.remove('hidden');
+            const img = document.createElement('img');
+            img.src = `https://flagcdn.com/h120/${currentCorrectCountry.code.toLowerCase()}.png`;
+            img.alt = `Flag of ${currentCorrectCountry.name}`;
+            img.onload = () => {
+                flagLoadingSpinner.classList.add('hidden');
+                flagDisplay.appendChild(img);
+            };
+            img.onerror = function() {
+                flagLoadingSpinner.classList.add('hidden');
+                flagDisplay.innerHTML = `<span style="font-size: 60px;">${currentCorrectCountry.emoji}</span>
+                    <p class="text-xs text-red-600 mt-1">Image unavailable</p>`;
+            };
+
+            const options = [currentCorrectCountry];
+            const numChoices = getNumberOfChoices();
+            
+            const tempCountryPool = allCountries.filter(c => 
+                c.name !== currentCorrectCountry.name && 
+                c.code !== currentCorrectCountry.code
+            );
+            shuffleArray(tempCountryPool);
+
+            for (let i = 0; options.length < numChoices && i < tempCountryPool.length; i++) {
+                if (!options.some(opt => opt.code === tempCountryPool[i].code)) {
+                    options.push(tempCountryPool[i]);
+                }
+            }
+
+            shuffleArray(options);
+
+            options.forEach((country, index) => {
+                const button = document.createElement('button');
+                button.textContent = country.name;
+                button.classList.add('option-button');
+                button.setAttribute('data-key', index + 1);
+                const keyHint = document.createElement('span');
+                keyHint.textContent = index + 1;
+                keyHint.classList.add('keyboard-shortcut');
+                button.appendChild(keyHint);
+                button.addEventListener('click', () => handleAnswer(country));
+                optionsContainer.appendChild(button);
+            });
+
+            document.addEventListener('keydown', handleKeyPress);
+            
+            questionsAnsweredInSession++;
+            questionsAnsweredStatDisplay.textContent = questionsAnsweredInSession;
+            
+            const progress = ((totalAvailableFlags - availableCountries.length) / totalAvailableFlags) * 100;
+            progressBarFill.style.width = `${progress}%`;
+
+            startTime = Date.now();
+            startTimer();
+
+            if (difficultySelect.value !== 'easy') {
+                hintButton.classList.remove('hidden');
+            }
+        }
+
+        function handleKeyPress(e) {
+            const key = e.key;
+            const options = optionsContainer.querySelectorAll('.option-button');
+            const keyMap = {'1': 0, '2': 1, '3': 2, '4': 3, '5': 4};
+            
+            if (keyMap.hasOwnProperty(key) && keyMap[key] < options.length) {
+                const selectedOption = options[keyMap[key]];
+                if (!selectedOption.disabled) {
+                    const countryName = selectedOption.textContent.replace(/[1-5]/, '').trim();
+                    const selectedCountry = allCountries.find(c => c.name === countryName);
+                    handleAnswer(selectedCountry);
+                }
+            }
+        }
+
+        function handleAnswer(selectedCountry, isTimeout = false) {
+            document.removeEventListener('keydown', handleKeyPress);
+            clearInterval(timerInterval);
+            const buttons = optionsContainer.querySelectorAll('.option-button');
+            buttons.forEach(b => b.disabled = true);
+            hintButton.disabled = true;
+
+            const responseTime = (Date.now() - startTime) / 1000;
+            let pointsEarned = 0;
+            let isCorrect = false;
+
+            if (isTimeout) {
+                messageArea.textContent = `Time's up! The answer was ${currentCorrectCountry.name}.`;
+                messageArea.style.color = '#ef4444';
+                currentStreak = 0;
+                incorrectSound.play().catch(() => {});
+                gameOverTitle.textContent = "Game Over!";
+                gameOverReason.textContent = "Time ran out!";
+            } else if (selectedCountry.name === currentCorrectCountry.name) {
+                isCorrect = true;
+                pointsEarned = 10;
+                
+                const timerDuration = getTimerDuration();
+                if (timerDuration > 0) {
+                    const timeTaken = timerDuration - timeLeft;
+                    if (timeTaken < 5) pointsEarned += 5;
+                    else if (timeTaken < 10) pointsEarned += 3;
+                }
+
+                if (!hintUsed) {
+                    pointsEarned += 5;
+                }
+                
+                currentStreak++;
+                if (currentStreak > longestStreak) {
+                    longestStreak = currentStreak;
+                }
+                pointsEarned += currentStreak * 2;
+
+                currentScore += pointsEarned;
+                correctAnswersInSession++;
+                messageArea.textContent = `Correct! +${pointsEarned} points`;
+                messageArea.style.color = '#10b981';
+                correctSound.play().catch(() => {});
+                
+                checkAchievements(true, responseTime);
+            } else {
+                messageArea.textContent = `Incorrect. The answer was ${currentCorrectCountry.name}.`;
+                messageArea.style.color = '#ef4444';
+                currentStreak = 0;
+                incorrectSound.play().catch(() => {});
+                gameOverTitle.textContent = "Game Over!";
+                gameOverReason.textContent = "You made an incorrect guess.";
+            }
+
+            buttons.forEach(button => {
+                if (button.textContent.includes(currentCorrectCountry.name)) {
+                    button.classList.add('correct');
+                } else if (selectedCountry && button.textContent.includes(selectedCountry.name)) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            scoreDisplay.textContent = currentScore;
+            streakDisplay.textContent = currentStreak;
+
+            if (isCorrect) {
+                nextFlagButton.classList.remove('hidden');
+            } else {
+                nextFlagButton.classList.add('hidden');
+                setTimeout(() => {
+                    endGame();
+                }, END_GAME_DELAY);
+            }
+
+            totalResponseTime += responseTime;
+            averageResponseTime = totalResponseTime / questionsAnsweredInSession;
+        }
+
+        function showHint() {
+            if (!hintUsed && currentScore >= 5) {
+                hintUsed = true;
+                currentScore -= 5;
+                scoreDisplay.textContent = currentScore;
+                
+                const hint = `Hint: This country is in ${currentCorrectCountry.region}`;
+                messageArea.textContent = hint;
+                messageArea.style.color = '#8b5cf6';
+                
+                hintButton.disabled = true;
+            }
+        }
+        
+        function initGame() {
+            settingsPanel.classList.add('hidden');
+            gameArea.classList.remove('hidden');
+            gameOverModal.classList.add('hidden');
+            nextFlagButton.classList.add('hidden');
+
+            currentScore = 0;
+            currentStreak = 0;
+            longestStreak = 0;
+            questionsAnsweredInSession = 0;
+            correctAnswersInSession = 0;
+            totalResponseTime = 0;
+            averageResponseTime = 0;
+            
+            scoreDisplay.textContent = currentScore;
+            streakDisplay.textContent = currentStreak;
+            questionsAnsweredStatDisplay.textContent = questionsAnsweredInSession;
+            
+            availableCountries = [...getFilteredCountries()];
+            totalAvailableFlags = availableCountries.length;
+
+            if (availableCountries.length < getNumberOfChoices()) {
+                flagDisplay.innerHTML = '<span style="font-size: 24px;">⚠️</span>';
+                messageArea.textContent = "Not enough countries for selected difficulty/region. Please adjust settings.";
+                messageArea.style.color = '#f59e0b';
+                settingsPanel.classList.remove('hidden');
+                gameArea.classList.add('hidden');
+                return;
+            }
+
+            shuffleArray(availableCountries);
+            loadNewFlag();
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            
+            saveCurrentGameAsLastGameStats();
+            updateAllTimeStats();
+            loadPersistentStats();
+
+            finalScoreDisplay.textContent = currentScore;
+            totalQuestionsDisplay.textContent = questionsAnsweredInSession;
+            correctAnswersDisplay.textContent = correctAnswersInSession;
+            longestStreakDisplay.textContent = longestStreak;
+
+            allTimeHighScoreModalDisplay.textContent = allTimeHighScore;
+            allTimeLongestStreakModalDisplay.textContent = allTimeLongestStreak;
+            
+            gameArea.classList.add('hidden');
+            gameOverModal.classList.remove('hidden');
+            gameOverModal.classList.add('visible');
+        }
+
+        function resetAndShowSettings() {
+            loadPersistentStats();
+
+            gameOverModal.classList.remove('visible');
+            setTimeout(() => {
+                gameOverModal.classList.add('hidden');
+                settingsPanel.classList.remove('hidden');
+                gameArea.classList.add('hidden');
+            }, 300);
+
+            flagDisplay.innerHTML = '<span style="font-size: 60px;">🏁</span>';
+            messageArea.textContent = 'Select difficulty and region, then press Start!';
+            messageArea.style.color = '#1e293b';
+            timerBarContainer.classList.add('hidden');
+            nextFlagButton.classList.add('hidden');
+            optionsContainer.innerHTML = '';
+            
+            scoreDisplay.textContent = 0;
+            streakDisplay.textContent = 0;
+            questionsAnsweredStatDisplay.textContent = 0;
+            timerDisplay.textContent = '--';
+
+            settingsAllTimeHighScoreDisplay.textContent = allTimeHighScore;
+            settingsAllTimeLongestStreakDisplay.textContent = allTimeLongestStreak;
+            settingsLastScoreDisplay.textContent = lastGameScore > 0 || questionsAnsweredInSession > 0 ? lastGameScore : "N/A";
+            settingsLastStreakDisplay.textContent = lastGameStreak > 0 || questionsAnsweredInSession > 0 ? lastGameStreak : "N/A";
+        }
+
+        // --- Event Listeners ---
+        startGameButton.addEventListener('click', initGame);
+        nextFlagButton.addEventListener('click', loadNewFlag);
+        restartGameButton.addEventListener('click', resetAndShowSettings);
+        hintButton.addEventListener('click', showHint);
+
+        // Initial setup
+        resetAndShowSettings();
+    </script>
+</body>
+</html>
